@@ -1,4 +1,4 @@
-For project setup you need to run this command: 
+To start the project, you need to run: 
 ~~~
 ./yii app/setup
 ~~~
