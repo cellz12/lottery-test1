@@ -19,9 +19,19 @@ $config = [
         'cache' => [
             'class' => 'yii\caching\FileCache',
         ],
+        'prize' => [
+            'class' => 'app\components\PrizeComponent',
+        ],
+        'player' => [
+            'class' => 'app\components\PlayerComponent',
+        ],
+        'bank' => [
+            'class' => 'app\components\BankComponent',
+        ],
         'user' => [
             'identityClass' => 'app\models\User',
             'enableAutoLogin' => true,
+            'loginUrl' => ['auth/login'],
         ],
         'errorHandler' => [
             'errorAction' => 'site/error',
@@ -43,14 +53,13 @@ $config = [
             ],
         ],
         'db' => $db,
-        /*
         'urlManager' => [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [
+
             ],
         ],
-        */
     ],
     'params' => $params,
 ];

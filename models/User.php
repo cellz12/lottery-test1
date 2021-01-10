@@ -2,75 +2,72 @@
 
 namespace app\models;
 
-class User extends \yii\base\BaseObject implements \yii\web\IdentityInterface
+use Yii;
+use yii\base\Exception;
+use yii\web\IdentityInterface;
+use yii\db\{ActiveRecord, ActiveQuery};
+
+/**
+ * Class User
+ * @property integer id
+ * @property string email
+ * @property string password
+ * @property integer card_number
+ * @property string username
+ * @property int|null balance
+ * @property float|null virtual_balance
+ */
+class User extends ActiveRecord implements IdentityInterface
 {
-    public $id;
-    public $username;
-    public $password;
+    /**
+     * @var string
+     */
     public $authKey;
+
+    /**
+     * @var string
+     */
     public $accessToken;
 
-    private static $users = [
-        '100' => [
-            'id' => '100',
-            'username' => 'admin',
-            'password' => 'admin',
-            'authKey' => 'test100key',
-            'accessToken' => '100-token',
-        ],
-        '101' => [
-            'id' => '101',
-            'username' => 'demo',
-            'password' => 'demo',
-            'authKey' => 'test101key',
-            'accessToken' => '101-token',
-        ],
-    ];
-
-
     /**
-     * {@inheritdoc}
-     */
-    public static function findIdentity($id)
+     * @return string
+    */
+    public static function tableName(): string
     {
-        return isset(self::$users[$id]) ? new static(self::$users[$id]) : null;
+        return 'users';
     }
 
     /**
      * {@inheritdoc}
      */
-    public static function findIdentityByAccessToken($token, $type = null)
+    public static function findIdentity($id): ?self
     {
-        foreach (self::$users as $user) {
-            if ($user['accessToken'] === $token) {
-                return new static($user);
-            }
-        }
+        return static::findOne($id);
+    }
 
+    /**
+     * {@inheritdoc}
+     */
+    public static function findIdentityByAccessToken($token, $type = null): ?IdentityInterface
+    {
         return null;
     }
 
     /**
-     * Finds user by username
+     * Finds user by email
      *
-     * @param string $username
+     * @param string $email
      * @return static|null
      */
-    public static function findByUsername($username)
+    public static function findByEmail(string $email): ?self
     {
-        foreach (self::$users as $user) {
-            if (strcasecmp($user['username'], $username) === 0) {
-                return new static($user);
-            }
-        }
-
-        return null;
+        return self::findOne(['email' => $email]);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getId()
+    public function getId(): ?int
     {
         return $this->id;
     }
@@ -78,15 +75,25 @@ class User extends \yii\base\BaseObject implements \yii\web\IdentityInterface
     /**
      * {@inheritdoc}
      */
-    public function getAuthKey()
+    public function getAuthKey(): ?string
     {
         return $this->authKey;
     }
 
     /**
+     * @param string $password
+     * @throws Exception
+     * @return void
+     */
+    public function setPasswordHash(string $password): void
+    {
+        $this->password = Yii::$app->getSecurity()->generatePasswordHash($password);
+    }
+
+    /**
      * {@inheritdoc}
      */
-    public function validateAuthKey($authKey)
+    public function validateAuthKey($authKey): bool
     {
         return $this->authKey === $authKey;
     }
@@ -97,8 +104,32 @@ class User extends \yii\base\BaseObject implements \yii\web\IdentityInterface
      * @param string $password password to validate
      * @return bool if password provided is valid for current user
      */
-    public function validatePassword($password)
+    public function validatePassword(string $password): bool
     {
-        return $this->password === $password;
+        return Yii::$app->getSecurity()->validatePassword($password, $this->password);
+    }
+
+    /**
+     * Gets query for [[UsersPrizes]].
+     *
+     * @return ActiveQuery
+     */
+    public function getPrizes(): ActiveQuery
+    {
+        return $this->hasMany(UserPrize::class, ['user_id' => 'id']);
+    }
+
+    /**
+     *
+     * @param bool $runValidation
+     * @return bool
+     */
+    public function login(bool $runValidation = true): bool
+    {
+        if (!$runValidation || $this->validate()) {
+            return Yii::$app->user->login($this, 3600*24*30);
+        }
+
+        return false;
     }
 }
