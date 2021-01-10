@@ -18,6 +18,9 @@ return [
         'mailer' => [
             'useFileTransport' => true,
         ],
+        'player' => [
+            'class' => 'app\components\PlayerComponent',
+        ],
         'assetManager' => [
             'basePath' => __DIR__ . '/../web/assets',
         ],
